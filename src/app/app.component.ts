@@ -1,6 +1,9 @@
 import { Component, AfterViewInit } from '@angular/core';
 import * as THREEAR from "threear";
 import * as THREE from "three";
+import { OBJLoader } from 'three/examples/jsm/loaders/OBJLoader';
+import { MTLLoader } from 'three/examples/jsm/loaders/MTLLoader';
+import { ActivatedRoute } from "@angular/router";
 
 @Component({
   selector: 'app-root',
@@ -9,6 +12,16 @@ import * as THREE from "three";
 })
 export class AppComponent implements AfterViewInit {
   title = 'app';
+
+  private _useModel: boolean;
+
+  constructor(private route: ActivatedRoute) { }
+
+  ngOnInit() {
+    this.route.queryParamMap.subscribe(queryParams => {
+      this._useModel = queryParams.get("useModel") == "true";
+    })
+  }
 
   ngAfterViewInit() {
     const renderer = new THREE.WebGLRenderer({
@@ -24,6 +37,8 @@ export class AppComponent implements AfterViewInit {
 
     // Initialise the three.js scene and camera
     const scene = new THREE.Scene();
+    scene.add(new THREE.AmbientLight(0xcccccc));
+
     const camera = new THREE.Camera();
     scene.add(camera);
 
@@ -34,15 +49,38 @@ export class AppComponent implements AfterViewInit {
 
     THREEAR.initialize({ source: source }).then((controller) => {
 
-      // Add a torus knot       
-      const geometry = new THREE.TorusKnotGeometry(0.3, 0.1, 64, 16);
-      const material = new THREE.MeshNormalMaterial();
-      const torus = new THREE.Mesh(geometry, material);
-      torus.position.y = 0.5
-      markerGroup.add(torus);
+      var mesh: any;
+
+      if (!this._useModel) {
+        // Add a torus knot       
+        const geometry = new THREE.TorusKnotGeometry(0.3, 0.1, 64, 16);
+        const material = new THREE.MeshNormalMaterial();
+        mesh = new THREE.Mesh(geometry, material);
+        mesh.position.y = 0.5
+        markerGroup.add(mesh);
+
+      } else {
+
+        // Load a model
+        var mtlLoader = new MTLLoader();
+        mtlLoader.setPath('assets/materials/');
+        mtlLoader.load('fish-2.mtl', (materials) => {
+          materials.preload();
+          var objLoader = new OBJLoader();
+          objLoader.setMaterials(materials);
+          objLoader.setPath('assets/models/');
+          objLoader.load('fish-2.obj', (group) => {
+            mesh = group.children[0];
+            mesh.material.side = THREE.DoubleSide;
+            mesh.position.y = 0.25;
+            mesh.scale.set(0.25, 0.25, 0.25);
+            markerGroup.add(mesh);
+          });
+        });
+      }
 
       var patternMarker = new THREEAR.PatternMarker({
-        patternUrl: 'assets/hiro.patt', // the URL of the hiro pattern
+        patternUrl: 'assets/markers/hiro.patt', // the URL of the hiro pattern
         markerObject: markerGroup,
         minConfidence: 0.4 // The confidence level before the marker should be shown
       });
@@ -62,8 +100,11 @@ export class AppComponent implements AfterViewInit {
         // call each update function
         controller.update(source.domElement);
 
-        torus.rotation.y += deltaMillisconds / 1000 * Math.PI
-        torus.rotation.z += deltaMillisconds / 1000 * Math.PI
+        // set object rotation
+        if (mesh) {
+          mesh.rotation.y += deltaMillisconds / 1000 * Math.PI;
+        }
+
         renderer.render(scene, camera);
       });
 
