@@ -13,13 +13,13 @@ import { ActivatedRoute } from "@angular/router";
 export class AppComponent implements AfterViewInit {
   title = 'app';
 
-  private _useModel: boolean;
+  private _loadModel: boolean;
 
   constructor(private route: ActivatedRoute) { }
 
   ngOnInit() {
     this.route.queryParamMap.subscribe(queryParams => {
-      this._useModel = queryParams.get("useModel") == "true";
+      this._loadModel = queryParams.get("loadModel") == "true";
     })
   }
 
@@ -35,32 +35,33 @@ export class AppComponent implements AfterViewInit {
     renderer.domElement.style.left = '0px'
     document.getElementById('content').appendChild(renderer.domElement);
 
-    // Initialise the three.js scene and camera
+    // Initialise the scene
     const scene = new THREE.Scene();
     scene.add(new THREE.AmbientLight(0xcccccc));
 
+    // Initialise the camera
     const camera = new THREE.Camera();
     scene.add(camera);
 
+    // Initialise the group
     const markerGroup = new THREE.Group();
     scene.add(markerGroup);
 
+    // Initialise the source
     var source = new THREEAR.Source({ renderer, camera });
 
     THREEAR.initialize({ source: source }).then((controller) => {
 
       var mesh: any;
 
-      if (!this._useModel) {
-        // Add a torus knot       
+      if (!this._loadModel) {
+        // Add a torus knot geometry      
         const geometry = new THREE.TorusKnotGeometry(0.3, 0.1, 64, 16);
         const material = new THREE.MeshNormalMaterial();
         mesh = new THREE.Mesh(geometry, material);
         mesh.position.y = 0.5
         markerGroup.add(mesh);
-
       } else {
-
         // Load a model
         var mtlLoader = new MTLLoader();
         mtlLoader.setPath('assets/materials/');
@@ -80,31 +81,28 @@ export class AppComponent implements AfterViewInit {
       }
 
       var patternMarker = new THREEAR.PatternMarker({
-        patternUrl: 'assets/markers/hiro.patt', // the URL of the hiro pattern
+        patternUrl: 'assets/markers/hiro.patt', // The path of the hiro pattern
         markerObject: markerGroup,
         minConfidence: 0.4 // The confidence level before the marker should be shown
       });
-
+      // Start to track the pattern marker
       controller.trackMarker(patternMarker);
 
-      // run the rendering loop
+      // Run the rendering loop
       let lastTimeMilliseconds = 0;
       requestAnimationFrame(function animate(nowMsec) {
-        // keep looping
+        // Keep looping
         requestAnimationFrame(animate);
-        // measure time
+        // Measure time
         lastTimeMilliseconds = lastTimeMilliseconds || nowMsec - 1000 / 60;
         const deltaMillisconds = Math.min(200, nowMsec - lastTimeMilliseconds);
         lastTimeMilliseconds = nowMsec;
-
-        // call each update function
+        // Call each update function
         controller.update(source.domElement);
-
-        // set object rotation
+        // Set the object rotation
         if (mesh) {
           mesh.rotation.y += deltaMillisconds / 1000 * Math.PI;
         }
-
         renderer.render(scene, camera);
       });
 
