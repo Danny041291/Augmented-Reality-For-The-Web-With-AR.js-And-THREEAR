@@ -20,7 +20,7 @@ export class AppComponent implements AfterViewInit {
   ngOnInit() {
     this.route.queryParamMap.subscribe(queryParams => {
       this._loadModel = queryParams.get("loadModel") == "true";
-    })
+    });
   }
 
   ngAfterViewInit() {
@@ -28,12 +28,13 @@ export class AppComponent implements AfterViewInit {
       antialias: true,
       alpha: true
     });
-    renderer.setClearColor(new THREE.Color('lightgrey'), 0)
+    renderer.setClearColor(new THREE.Color('lightgrey'), 0);
     renderer.setSize(window.innerWidth, window.innerHeight);
-    renderer.domElement.style.position = 'absolute'
-    renderer.domElement.style.top = '0px'
-    renderer.domElement.style.left = '0px'
-    document.getElementById('content').appendChild(renderer.domElement);
+    renderer.domElement.style.position = 'absolute';
+    renderer.domElement.style.top = '0px';
+    renderer.domElement.style.left = '0px';
+    var content = document.getElementById('content');
+    content.appendChild(renderer.domElement);
 
     // Initialise the scene
     const scene = new THREE.Scene();
@@ -59,7 +60,7 @@ export class AppComponent implements AfterViewInit {
         const geometry = new THREE.TorusKnotGeometry(0.3, 0.1, 64, 16);
         const material = new THREE.MeshNormalMaterial();
         mesh = new THREE.Mesh(geometry, material);
-        mesh.position.y = 0.5
+        mesh.position.y = 0.5;
         markerGroup.add(mesh);
       } else {
         // Load a model
