@@ -11,7 +11,7 @@ import { ActivatedRoute } from "@angular/router";
   styleUrls: ['./app.component.scss']
 })
 export class AppComponent implements AfterViewInit {
-  title = 'app';
+  title = 'my-first-project';
 
   private _loadModel: boolean;
 
@@ -24,15 +24,20 @@ export class AppComponent implements AfterViewInit {
   }
 
   ngAfterViewInit() {
+
+    // Initialise the render
     const renderer = new THREE.WebGLRenderer({
       antialias: true,
       alpha: true
     });
+
     renderer.setClearColor(new THREE.Color('lightgrey'), 0);
     renderer.setSize(window.innerWidth, window.innerHeight);
     renderer.domElement.style.position = 'absolute';
     renderer.domElement.style.top = '0px';
     renderer.domElement.style.left = '0px';
+
+    // Append the render to the content
     var content = document.getElementById('content');
     content.appendChild(renderer.domElement);
 
@@ -51,18 +56,24 @@ export class AppComponent implements AfterViewInit {
     // Initialise the source
     var source = new THREEAR.Source({ renderer, camera });
 
+    // Initialise the context
     THREEAR.initialize({ source: source }).then((controller) => {
 
       var mesh: any;
 
       if (!this._loadModel) {
+
         // Add a torus knot geometry      
         const geometry = new THREE.TorusKnotGeometry(0.3, 0.1, 64, 16);
         const material = new THREE.MeshNormalMaterial();
+
+        // Create a mesh
         mesh = new THREE.Mesh(geometry, material);
         mesh.position.y = 0.5;
         markerGroup.add(mesh);
+
       } else {
+
         // Load a model
         var mtlLoader = new MTLLoader();
         mtlLoader.setPath('assets/materials/');
@@ -79,32 +90,40 @@ export class AppComponent implements AfterViewInit {
             markerGroup.add(mesh);
           });
         });
+
       }
 
+      // Create a patten marker
       var patternMarker = new THREEAR.PatternMarker({
         patternUrl: 'assets/markers/hiro.patt', // The path of the hiro pattern
         markerObject: markerGroup,
         minConfidence: 0.4 // The confidence level before the marker should be shown
       });
+
       // Start to track the pattern marker
       controller.trackMarker(patternMarker);
 
       // Run the rendering loop
       let lastTimeMilliseconds = 0;
       requestAnimationFrame(function animate(nowMsec) {
+
         // Keep looping
         requestAnimationFrame(animate);
+
         // Measure time
         lastTimeMilliseconds = lastTimeMilliseconds || nowMsec - 1000 / 60;
         const deltaMillisconds = Math.min(200, nowMsec - lastTimeMilliseconds);
         lastTimeMilliseconds = nowMsec;
-        // Call each update function
+
+        // Call the update function for each object inside the scene
         controller.update(source.domElement);
+        
         // Set the object rotation
-        if (mesh) {
-          mesh.rotation.y += deltaMillisconds / 1000 * Math.PI;
-        }
+        if (mesh) mesh.rotation.y += deltaMillisconds / 1000 * Math.PI;
+
+        // Render the scene
         renderer.render(scene, camera);
+
       });
 
     });
